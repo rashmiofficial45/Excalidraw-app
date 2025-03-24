@@ -8,7 +8,9 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@repo/typescript-config": "workspace:*"
+    "@repo/typescript-config": "workspace:*",
+    "@types/ws": "^8.18.0",
+    "ws": "^8.18.1"
   },
   "keywords": [],
   "author": "",
@@ -16,4 +18,3 @@
   "type": "commonjs",
   "description": ""
 }
-
