@@ -8,6 +8,7 @@ app.listen(3001, () => {
   console.log("Server is running on port 3001");
 });
 app.post("/signup", (req, res) => {
+  //DB call
   res.send("signup");
 });
 app.post("/signin", (req, res) => {
@@ -18,8 +19,11 @@ app.post("/signin", (req, res) => {
     },
     JWT_SECRET
   );
-  res.send("signin");
+  res.send(token);
 });
 app.post("/room", Middleware, (req, res) => {
-  res.send("create-room");
+  //DB call
+  res.send({
+    roomId: 1212
+  });
 });
