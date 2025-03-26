@@ -9,14 +9,27 @@
   } from "@repo/common/types";
   const app = express();
 
-  app.listen(3001, () => {
-    console.log("Server is running on port 3001");
-  });
   app.post("/signup", (req, res) => {
+    const data = createUserSchema.safeParse(req.body)
+    if (!data.success) {
+      res.status(401).json({
+        message: "Invalid data",
+        errors: data.error
+      });
+      return;
+    }
     //DB call
-    res.send("signup");
-  });
+    });
+
   app.post("/signin", (req, res) => {
+    const data = signInSchema.safeParse(req.body);
+    if (!data.success) {
+      res.status(401).json({
+        message: "Invalid data",
+        errors: data.error,
+      });
+      return;
+    }
     const userId = 1;
     const token = jwt.sign(
       {
@@ -27,8 +40,19 @@
     res.send(token);
   });
   app.post("/room", Middleware, (req, res) => {
+    const data = createRoomSchema.safeParse(req.body);
+    if (!data.success) {
+      res.status(401).json({
+        message: "Invalid data",
+        errors: data.error,
+      });
+      return;
+    }
     //DB call
     res.send({
       roomId: 1212
     });
+  });
+  app.listen(3001, () => {
+    console.log("Server is running on port 3001");
   });
