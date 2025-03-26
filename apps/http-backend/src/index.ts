@@ -10,6 +10,7 @@ import {
 } from "@repo/common/types";
 const app = express();
 
+app.use(express.json())
 app.post("/signup", async (req, res) => {
   const parsedData = createUserSchema.safeParse(req.body);
   if (!parsedData.success) {
