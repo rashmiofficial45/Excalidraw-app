@@ -1,5 +1,5 @@
 {
-  "name": "common",
+  "name": "@repo/common",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,7 @@
     "@repo/typescript-config": "workspace:*"
   },
   "exports": {
-    "./common": "./src/types.ts"
+    "./types": "./src/types.ts"
   },
   "keywords": [],
   "author": "",
