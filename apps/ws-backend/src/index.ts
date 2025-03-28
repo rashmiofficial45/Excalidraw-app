@@ -51,17 +51,24 @@ wss.on("connection", function connection(ws, req) {
   });
   ws.on("message", function message(data) {
     const parsedData = JSON.parse(data as unknown as string);
+    // "type":"join_room",
+    // "roomId":1
     if (parsedData.type === "join_room") {
       const user = users.find((x) => x.ws === ws);
       user?.rooms.push(parsedData.roomId);
     }
+    // "type":"leave_room",
+    // "roomId":1
     if (parsedData.type === "leave_room") {
       const user = users.find((x) => x.ws === ws);
       if (!user) {
         return;
       }
-      user.rooms = user?.rooms.filter((x) => x === parsedData.roomId);
+      user.rooms = user?.rooms.filter((x) => x === parsedData.room);
     }
+    // "type":"chat",
+    // "roomId":1,
+    // "message":"hi everyone"
     if (parsedData.type === "chat") {
       const roomId = parsedData.roomId;
       const message = parsedData.message;
