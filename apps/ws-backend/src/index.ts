@@ -50,17 +50,32 @@ wss.on("connection", function connection(ws, req) {
     rooms: [],
   });
   ws.on("message", function message(data) {
-    const parsedData = JSON.parse(data as unknown as string)
+    const parsedData = JSON.parse(data as unknown as string);
     if (parsedData.type === "join_room") {
-      const user = users.find(x => x.ws === ws)
-        user?.rooms.push(parsedData.roomId)
+      const user = users.find((x) => x.ws === ws);
+      user?.rooms.push(parsedData.roomId);
     }
-    if (parsedData.type === "leave_room"){
-      const user = users.find(x => x.ws === ws)
-      if(!user ){
-        return
+    if (parsedData.type === "leave_room") {
+      const user = users.find((x) => x.ws === ws);
+      if (!user) {
+        return;
       }
-      user.rooms = user?.rooms.filter(x => x === parsedData.roomId)
+      user.rooms = user?.rooms.filter((x) => x === parsedData.roomId);
+    }
+    if (parsedData.type === "chat") {
+      const roomId = parsedData.roomId;
+      const message = parsedData.message;
+      users.forEach((user) => {
+        if (user.rooms.includes(roomId)) {
+          user.ws.send(
+            JSON.stringify({
+              type: "chat",
+              message,
+              roomId,
+            })
+          );
+        }
+      });
     }
   });
 });
