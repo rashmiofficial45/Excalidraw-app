@@ -1,5 +1,6 @@
 import { WebSocket, WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
+import { prisma } from "@repo/db/client";
 import { JWT_SECRET } from "@repo/backend-common/config";
 const wss = new WebSocketServer({ port: 8080 });
 
@@ -49,7 +50,7 @@ wss.on("connection", function connection(ws, req) {
     userId,
     rooms: [],
   });
-  ws.on("message", function message(data) {
+  ws.on("message", async function message(data) {
     const parsedData = JSON.parse(data as unknown as string);
     // "type":"join_room",
     // "roomId":1
@@ -72,6 +73,15 @@ wss.on("connection", function connection(ws, req) {
     if (parsedData.type === "chat") {
       const roomId = parsedData.roomId;
       const message = parsedData.message;
+
+      //dumb first principle ideally should use Queue
+      await prisma.chat.create({
+        data:{
+          message,
+          roomId,
+          userId
+        }
+      })
       users.forEach((user) => {
         if (user.rooms.includes(roomId)) {
           user.ws.send(
