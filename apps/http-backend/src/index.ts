@@ -133,6 +133,30 @@ app.get("/chats/:roomId",async (req, res) => {
   }
 });
 
+//get roomId by slug endpoint
+app.get("/room/:slug",async (req, res) => {
+  //Rate-limiting and fast
+  const slug = String(req.params.slug)
+  if (!slug) {
+    res.status(401).json({
+      message: "Invalid Room",
+    });
+    return;
+  }
+  try {
+    const Room = await prisma.room.findFirst({
+      where:{
+        slug
+      }
+    });
+    res.send({
+      roomId: Room?.id,
+    });
+  } catch (error) {
+    res.status(411).json({ msg: "Invalid Slug" });
+  }
+});
+
 //Server is running on 3001
 app.listen(3001, () => {
   console.log("Server is running on port 3001");
