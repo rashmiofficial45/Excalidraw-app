@@ -105,6 +105,34 @@ app.post("/room", Middleware, async (req, res) => {
   }
 });
 
+//chat history endpoint
+app.get("/chats/:roomId",async (req, res) => {
+  //Rate-limiting and fast
+  const roomId = Number(req.params.roomId);
+  if (!roomId) {
+    res.status(401).json({
+      message: "Invalid Room",
+    });
+    return;
+  }
+  try {
+    const Messages = await prisma.chat.findMany({
+      where:{
+        roomId:roomId
+      },
+      orderBy:{
+        id:"desc"
+      },
+      take:50
+    });
+    res.send({
+      Messages: Messages,
+    });
+  } catch (error) {
+    res.status(411).json({ msg: "Room not Exists with this Id" });
+  }
+});
+
 //Server is running on 3001
 app.listen(3001, () => {
   console.log("Server is running on port 3001");
