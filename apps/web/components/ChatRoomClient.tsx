@@ -7,7 +7,7 @@ export function ChatRoomClient({ messages, id }: {
     messages: { message: string }[],
     id: number
 }) {
-    const [chats, setChats] = useState(messages || []);
+    const [chats, setChats] = useState(messages);
     const [newMessage, setNewMessage] = useState("");
     const { socket, loading } = useSocket();
     const [socketReady, setSocketReady] = useState(false);
@@ -58,7 +58,7 @@ export function ChatRoomClient({ messages, id }: {
                 try {
                     const parsedData = JSON.parse(e.data);
                     if (parsedData.type === "chat") {
-                        setChats(c => [...(c || []), { message: parsedData.message }]);
+                        setChats(c => [...c, { message: parsedData.message }]);
                     }
                 } catch (error) {
                     console.error("Error processing message:", error);

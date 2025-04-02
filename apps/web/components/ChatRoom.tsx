@@ -5,7 +5,7 @@ import { ChatRoomClient } from "./ChatRoomClient"
 async function getChats(roomId: number) {
     try {
         const response = await axios.get(`${BACKEND_URL}/chats/${roomId}`)
-        return response.data.message || []
+        return response.data.Messages
     } catch (error) {
         console.error("Failed to fetch chat messages:", error)
         return [] // Return empty array on error
@@ -19,5 +19,7 @@ export async function ChatRoom({ id }: { id: number }) {
     }
 
     const messages = await getChats(id)
+    // console.log(JSON.stringify(messages));
+
     return <ChatRoomClient messages={messages} id={id} />
 }
