@@ -1,17 +1,23 @@
+// ChatRoomCall.js (Server Component)
 import axios from 'axios'
 import { BACKEND_URL } from '../../../config'
+import { ChatRoom } from '../../../components/ChatRoom'
 
-async function getRoomId(slug:string) {
+async function getRoomId(slug: string) {
   const result = await axios.get(`${BACKEND_URL}/room/${slug}`)
-  return result.data.id
+  const roomId:number = result.data.roomId
+  return roomId
 }
-async  function ChatRoom({ params }: {
+
+async function ChatRoomCall({ params }: {
   params: {
     slug: string
   }
 }) {
-  const slug = params.slug
+  const {slug} = await params
   const roomId = await getRoomId(slug)
+  console.log(roomId)
+  return <ChatRoom id={roomId} />
 }
 
-export default ChatRoom
+export default ChatRoomCall
