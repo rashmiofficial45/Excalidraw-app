@@ -21,6 +21,7 @@ const config: Omit<Config, "content"> = {
         },
       },
     },
+    
     // plugins: [],
   },
 };
