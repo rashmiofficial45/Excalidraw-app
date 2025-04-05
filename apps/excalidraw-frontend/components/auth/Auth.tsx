@@ -9,13 +9,17 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@repo/ui/components/ui/separator';
 import { Github, Mail } from 'lucide-react';
 import Link from 'next/link';
+import axios from 'axios';
+import { useRouter } from 'next/navigation';
+const BACKEND_URL = "http://localhost:3001";
 
 const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring props
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [username, setUsername] = useState("")
+    const router = useRouter()
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         //do something with the form data
         e.preventDefault();
         const formdata = {
@@ -25,7 +29,31 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
         }
         console.log(formdata)
         //send the form data to the server
-        // const signUpdata = axios.post("/signup", formdata)
+        try {
+            if (isSignupPage) {
+                const response = await axios.post(`${BACKEND_URL}/signup`, {
+                    name: username,
+                    username: email,
+                    password
+                })
+                if (response) {
+                    console.log("User Created Successfully")
+                }
+                router.push("/signin")
+            } else {
+                const response = await axios.post(`${BACKEND_URL}/signin`, {
+                    username:email,
+                    password
+                })
+                const token = response.data
+                localStorage.setItem("token", token)
+                console.log(token , "Signed in Successfully")
+                router.push("/");
+
+            }
+        } catch (error:any) {
+            console.error("Auth error:", error.response?.data || error.message);
+        }
     }
     return (
         <div>
@@ -70,7 +98,7 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
                                         onChange={(e) => setUsername(e.target.value)}
                                         required
                                     />
-                                </div>:<></>}
+                                </div> : <></>}
                                 <div className="space-y-2">
                                     <Label htmlFor="email">Email</Label>
                                     <Input
@@ -92,11 +120,14 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
                                         required
                                     />
                                 </div>
-                                {isSignupPage ? <Button type="submit" className="w-full">
-                                    Sign Up
-                                </Button> : <Button type="submit" className="w-full">
-                                    Sign in
-                                </Button>}
+                                {isSignupPage ?
+                                    <Button type="submit" className="w-full">
+                                        Sign Up
+                                    </Button>
+                                    :
+                                    <Button type="submit" className="w-full">
+                                        Sign in
+                                    </Button>}
                             </form>
                         </div>
                     </CardContent>
@@ -106,18 +137,18 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
                                 Forgot your password?
                             </Link>
                         </div>
-                        {isSignupPage?
+                        {isSignupPage ?
                             <div className="text-sm text-muted-foreground text-center">
                                 <Link href="/signin" className="hover:text-primary underline underline-offset-4">
                                     Sign In
                                 </Link>
                             </div>
-                        :<div className="text-sm text-muted-foreground text-center">
-                            Don&apos;t have an account?{' '}
-                            <Link href="/signup" className="hover:text-primary underline underline-offset-4">
-                                Sign up
-                            </Link>
-                        </div>}
+                            : <div className="text-sm text-muted-foreground text-center">
+                                Don&apos;t have an account?{' '}
+                                <Link href="/signup" className="hover:text-primary underline underline-offset-4">
+                                    Sign up
+                                </Link>
+                            </div>}
                     </CardFooter>
                 </Card>
             </div>
