@@ -1,47 +1,72 @@
-"use client"
-import React, { useEffect, useRef } from 'react'
+"use client";
+import React, { useEffect, useRef } from "react";
 
-type Props = {}
+const Canvas = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
 
-const Canvas = (props: Props) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    useEffect(()=>{
-        const canvas = canvasRef.current
-        if (canvas){
-            const ctx = canvas.getContext("2d")
-            if(!ctx){
-                return
-            }
-            ctx.strokeRect(50,50,100,100)
-            let isClicked = false
-            let startX = 0
-            let startY = 0
-            canvas.addEventListener("mousedown",(e)=>{
-                isClicked = true
-                startX = e.clientX
-                startY = e.clientY
-                console.log(e.clientX, e.clientY)
-            })
-            canvas.addEventListener("mouseup",(e)=>{
-                isClicked = false
-                console.log(e.clientX, e.clientY)
-            })
-            canvas.addEventListener("mousemove",(e)=>{
-                if(isClicked){
-                    const width = e.clientX - startX
-                    const height = e.clientY - startY
-                    // ctx.lineTo(e.clientX, e.clientY)
-                    // ctx.stroke()
-                    ctx.clearRect(0,0,canvas.width,canvas.height)
-                    ctx.strokeRect(startX,startY,width,height)
-                }
-                console.log(e.clientX, e.clientY)
-            })
-        }
-    },[canvasRef])
-  return (
-    <canvas ref={canvasRef} className='bg-white' height={1000} width={1000}>Canvas</canvas>
-  )
-}
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
 
-export default Canvas
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        let isDrawing = false;
+        let startX = 0;
+        let startY = 0;
+
+        const getMousePos = (e: MouseEvent) => {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+            };
+        };
+
+        const handleMouseDown = (e: MouseEvent) => {
+            const pos = getMousePos(e);
+            startX = pos.x;
+            startY = pos.y;
+            isDrawing = true;
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (!isDrawing) return;
+
+            const pos = getMousePos(e);
+            const width = pos.x - startX;
+            const height = pos.y - startY;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.strokeStyle = "white";
+            ctx.fillStyle = "black";
+            ctx.strokeRect(startX, startY, width, height);
+        };
+
+        const handleMouseUp = () => {
+            isDrawing = false;
+        };
+
+        canvas.addEventListener("mousedown", handleMouseDown);
+        canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("mouseup", handleMouseUp);
+
+        return () => {
+            canvas.removeEventListener("mousedown", handleMouseDown);
+            canvas.removeEventListener("mousemove", handleMouseMove);
+            canvas.removeEventListener("mouseup", handleMouseUp);
+        };
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="bg-black border"
+            width={1534}
+            height={926}
+        />
+    );
+};
+
+export default Canvas;
