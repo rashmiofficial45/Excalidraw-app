@@ -42,22 +42,39 @@ const DrawInit = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const pos = getMousePos(e);
     const width = pos.x - startX;
     const height = pos.y - startY;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+    clearCanvas(ctx, existingShape, canvas)
     ctx.strokeStyle = "white";
-    ctx.fillStyle = "black";
     ctx.strokeRect(startX, startY, width, height);
   };
 
   const handleMouseUp = (e: MouseEvent) => {
     isDrawing = false;
-
+    const pos = getMousePos(e);
+    const width = pos.x - startX;
+    const height = pos.y - startY;
+    existingShape.push({
+        type:"rect",
+        x:startX,
+        y:startY,
+        width,
+        height
+    })
   };
 
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseup", handleMouseUp);
+
+  function clearCanvas(ctx:CanvasRenderingContext2D,existingShape:Shape[],canvas:HTMLCanvasElement){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "black"
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        existingShape.map((shape)=>{
+            if(shape.type === "rect"){
+                ctx.strokeRect(shape.x, shape.y , shape.width, shape.height)
+            }
+        })
+  }
 };
 
 export default DrawInit;
