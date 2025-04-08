@@ -1,3 +1,6 @@
+import axios from "axios";
+import { BACKEND_URL } from "../components/auth/Auth";
+
 type Shape =
   | {
       type: "rect";
@@ -15,11 +18,16 @@ type Shape =
       endAngle: number;
     };
 
-const DrawInit = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
-  let existingShape: Shape[] = [];
+const DrawInit = async (
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  roomId: number
+) => {
+  let existingShape: Shape[] = await getExistingShape(roomId);
   let isDrawing = false;
   let startX = 0;
   let startY = 0;
+  clearCanvas(ctx, existingShape, canvas);
 
   const getMousePos = (e: MouseEvent) => {
     const rect = canvas.getBoundingClientRect();
@@ -42,7 +50,7 @@ const DrawInit = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const pos = getMousePos(e);
     const width = pos.x - startX;
     const height = pos.y - startY;
-    clearCanvas(ctx, existingShape, canvas)
+    clearCanvas(ctx, existingShape, canvas);
     ctx.strokeStyle = "white";
     ctx.strokeRect(startX, startY, width, height);
   };
@@ -53,28 +61,41 @@ const DrawInit = (canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) => {
     const width = pos.x - startX;
     const height = pos.y - startY;
     existingShape.push({
-        type:"rect",
-        x:startX,
-        y:startY,
-        width,
-        height
-    })
+      type: "rect",
+      x: startX,
+      y: startY,
+      width,
+      height,
+    });
   };
 
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseup", handleMouseUp);
-
-  function clearCanvas(ctx:CanvasRenderingContext2D,existingShape:Shape[],canvas:HTMLCanvasElement){
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "black"
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        existingShape.map((shape)=>{
-            if(shape.type === "rect"){
-                ctx.strokeRect(shape.x, shape.y , shape.width, shape.height)
-            }
-        })
-  }
 };
 
+function clearCanvas(
+  ctx: CanvasRenderingContext2D,
+  existingShape: Shape[],
+  canvas: HTMLCanvasElement
+) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  existingShape.map((shape) => {
+    if (shape.type === "rect") {
+      ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
+    }
+  });
+}
+
+async function getExistingShape(roomId: number) {
+  const res = await axios(`${BACKEND_URL}/chats/:${roomId}`);
+  const messages = res.data.Messages;
+  const shapes = messages.map((x: { message: string }) => {
+    const messageData = JSON.parse(x.message);
+    return messageData;
+  });
+  return shapes;
+}
 export default DrawInit;
