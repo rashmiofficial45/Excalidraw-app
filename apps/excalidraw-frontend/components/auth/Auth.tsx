@@ -11,7 +11,7 @@ import { Github, Mail } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-const BACKEND_URL = "http://localhost:3001";
+export const BACKEND_URL = "http://localhost:3001";
 
 const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring props
     const [email, setEmail] = useState("")
