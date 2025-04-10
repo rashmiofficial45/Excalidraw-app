@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import DrawInit from "../draw";
 
-const Canvas = ({ roomId }: { roomId: number }) => {
+const Canvas = ({ roomId , socket }: { roomId: number, socket:WebSocket }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     console.log(roomId)
     useEffect(() => {
@@ -15,7 +15,7 @@ const Canvas = ({ roomId }: { roomId: number }) => {
             const ctx = canvas.getContext("2d");
             if (!ctx) return;
 
-            await DrawInit(canvas, ctx, roomId);
+            await DrawInit(canvas, ctx, roomId, socket);
         };
 
         fetchData();
@@ -28,7 +28,7 @@ const Canvas = ({ roomId }: { roomId: number }) => {
                 width={1534}
                 height={927}
             />
-            <div className="absolute top-0 left-0 flex flex-col gap-2">
+            <div className="absolute bg-amber-300 top-0 left-0 flex flex-col gap-2">
                 <h1>Rect</h1>
                 <h1>Circle</h1>
             </div>

@@ -1,4 +1,4 @@
-import Canvas from "../../../components/Canvas";
+import RoomCanvas from "../../../components/RoomCanvas";
 
 const CanvasPage = async({ params }: { params: { roomId: number } }) => {
     const roomId = (await params).roomId
@@ -7,7 +7,7 @@ const CanvasPage = async({ params }: { params: { roomId: number } }) => {
         return
     }
     return (
-        <Canvas roomId={roomId}/>
+        <RoomCanvas roomId={roomId}/>
     )
 };
 

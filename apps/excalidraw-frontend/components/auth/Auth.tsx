@@ -11,7 +11,7 @@ import { Github, Mail } from 'lucide-react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-export const BACKEND_URL = "http://localhost:3001";
+import { BACKEND_URL } from '../../lib/config';
 
 const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring props
     const [email, setEmail] = useState("")
@@ -49,7 +49,6 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
                 localStorage.setItem("token", token)
                 console.log(token , "Signed in Successfully")
                 router.push("/");
-
             }
         } catch (error:any) {
             console.error("Auth error:", error.response?.data || error.message);

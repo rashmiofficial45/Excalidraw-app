@@ -1,5 +1,5 @@
 import axios from "axios";
-import { BACKEND_URL } from "../components/auth/Auth";
+import { BACKEND_URL } from "../lib/config";
 
 type Shape =
   | {
@@ -13,7 +13,7 @@ type Shape =
       type: "circle";
       x: number;
       y: number;
-      redius: number;
+      radius: number;
       startAngle: number;
       endAngle: number;
     };
@@ -21,9 +21,17 @@ type Shape =
 const DrawInit = async (
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
-  roomId: number
+  roomId: number,
+  socket: WebSocket
 ) => {
   let existingShape: Shape[] = await getExistingShape(roomId);
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "chat") {
+      existingShape.push(data.message);
+      clearCanvas(ctx, existingShape, canvas);
+    }
+  };
   let isDrawing = false;
   let startX = 0;
   let startY = 0;
@@ -46,7 +54,6 @@ const DrawInit = async (
 
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDrawing) return;
-
     const pos = getMousePos(e);
     const width = pos.x - startX;
     const height = pos.y - startY;
@@ -60,13 +67,21 @@ const DrawInit = async (
     const pos = getMousePos(e);
     const width = pos.x - startX;
     const height = pos.y - startY;
-    existingShape.push({
+    const shape: Shape = {
       type: "rect",
       x: startX,
       y: startY,
       width,
       height,
-    });
+    };
+    existingShape.push(shape);
+    socket.send(
+      JSON.stringify({
+        type: "chat",
+        message: shape,
+        roomId,
+      })
+    );
   };
 
   canvas.addEventListener("mousedown", handleMouseDown);
