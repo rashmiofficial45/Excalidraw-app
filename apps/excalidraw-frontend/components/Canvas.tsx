@@ -5,6 +5,7 @@ import DrawInit from "../draw";
 const Canvas = ({ roomId , socket }: { roomId: number, socket:WebSocket }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     console.log(roomId)
+    
     useEffect(() => {
         if (!roomId) return;
 
@@ -19,7 +20,7 @@ const Canvas = ({ roomId , socket }: { roomId: number, socket:WebSocket }) => {
         };
 
         fetchData();
-    }, [roomId]);
+    }, [canvasRef]);
     return (
         <>
             <canvas
