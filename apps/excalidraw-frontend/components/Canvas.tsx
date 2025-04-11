@@ -1,23 +1,23 @@
 "use client"
 import React, { useEffect, useRef, useState } from "react";
 import DrawInit from "../draw";
-import { TopToolbar } from "./canvas/TopToolbar";
-import { useIsMobile } from "../hooks/use-mobile";
-import { SideToolbar } from "./canvas/SideToolbar";
-import { MobileToolbar } from "./canvas/MobileToolbar";
+// import { TopToolbar } from "./canvas/TopToolbar";
+// import { useIsMobile } from "../hooks/use-mobile";
+// import { SideToolbar } from "./canvas/SideToolbar";
+// import { MobileToolbar } from "./canvas/MobileToolbar";
 // import { CanvasTool } from "./canvas/CanvasTool";
 
 const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     console.log(roomId)
-    const [currentTool, setCurrentTool] = useState('select');
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [zoomLevel, setZoomLevel] = useState(100);
-    const isMobile = useIsMobile();
+    // const [currentTool, setCurrentTool] = useState('select');
+    // const [isCollapsed, setIsCollapsed] = useState(false);
+    // const [zoomLevel, setZoomLevel] = useState(100);
+    // const isMobile = useIsMobile();
 
-    const toggleSidebar = () => {
-        setIsCollapsed(!isCollapsed);
-    };
+    // const toggleSidebar = () => {
+    //     setIsCollapsed(!isCollapsed);
+    // };
 
     useEffect(() => {
         if (!roomId) return;
@@ -36,7 +36,7 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
     }, [canvasRef]);
     return (
         <>
-            <div className="flex h-screen w-full flex-col overflow-hidden">
+            {/* <div className="flex h-screen w-full flex-col overflow-hidden">
                 <TopToolbar
                     toggleSidebar={toggleSidebar}
                     isCollapsed={isCollapsed}
@@ -51,7 +51,7 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
                             setCurrentTool={setCurrentTool}
                             isCollapsed={isCollapsed}
                         />
-                    )}
+                    )} */}
 
                     <canvas
                         ref={canvasRef}
@@ -59,12 +59,12 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
                         width={1534}
                         height={927}
                     />
-                </div>
+                {/* </div>
 
                 {isMobile && (
                     <MobileToolbar currentTool={currentTool} setCurrentTool={setCurrentTool} />
                 )}
-            </div>
+            </div> */}
         </>
     );
 }
