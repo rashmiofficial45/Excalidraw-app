@@ -48,7 +48,7 @@ const Auth = ({ isSignupPage }: { isSignupPage: boolean }) => { //destructuring 
                 const token = response.data
                 localStorage.setItem("token", token)
                 console.log(token , "Signed in Successfully")
-                router.push("/");
+                router.push("/room");
             }
         } catch (error:any) {
             console.error("Auth error:", error.response?.data || error.message);

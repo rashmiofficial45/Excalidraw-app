@@ -2,12 +2,13 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 import { Button } from './ui/button';
+import Link from 'next/link';
 
 const Navbar = () => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
+        <div className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md">
             <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
                 <div className="flex items-center gap-2">
                     <div className="text-xl font-bold text-brand-500">Excalidraw</div>
@@ -21,8 +22,12 @@ const Navbar = () => {
                 </div>
 
                 <div className="hidden md:flex items-center gap-4">
-                    <Button variant="outline" className="text-sm">Sign In</Button>
-                    <Button className="bg-gray-500 hover:bg-gray-600">Try Now</Button>
+                    <Link href={"/signin"}>
+                        <Button variant="outline" className="text-sm">Sign In</Button>
+                    </Link>
+                    <Link href={"/signup"}>
+                        <Button className="bg-gray-500 hover:bg-gray-600">Try Now</Button>
+                    </Link>
                 </div>
 
                 <button
@@ -42,13 +47,17 @@ const Navbar = () => {
                         <a href="#testimonials" className="text-sm font-medium hover:text-brand-500 py-2">Testimonials</a>
                         <a href="#pricing" className="text-sm font-medium hover:text-brand-500 py-2">Pricing</a>
                         <div className="flex flex-col gap-2 pt-2">
-                            <Button variant="ghost" className="text-sm">Sign In</Button>
-                            <Button className="bg-brand-500 hover:bg-brand-600">Try Now</Button>
+                            <Link href={"/signin"}>
+                                <Button variant="ghost" className="text-sm">Sign In</Button>
+                            </Link>
+                            <Link href={"/signup"}>
+                                <Button className="bg-gray-500 hover:bg-gray-600">Try Now</Button>
+                            </Link>
                         </div>
                     </div>
                 </div>
             )}
-        </nav>
+        </div>
     );
 };
 
