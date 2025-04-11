@@ -73,19 +73,19 @@ wss.on("connection", function connection(ws, req) {
     // "roomId":1,
     // "message":"hi everyone"
     if (parsedData.type === "chat") {
-      const roomId = parsedData.roomId;
+      const roomId = Number(parsedData.roomId);
       const message = parsedData.message;
 
       //dumb first principle ideally should use Queue
       await prisma.chat.create({
         data: {
           message: JSON.stringify(message), // ✅ store message as string
-          roomId: Number(parsedData.roomId), // ✅ ensure roomId is number
+          roomId, // ✅ ensure roomId is number
           userId,
         },
       });
       users.forEach((user) => {
-        if (user.rooms.includes(roomId)) {
+        if (user.rooms.includes(roomId.toString())) {
           user.ws.send(
             JSON.stringify({
               type: "chat",
