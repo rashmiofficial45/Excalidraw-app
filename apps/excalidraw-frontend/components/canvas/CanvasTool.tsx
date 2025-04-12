@@ -1,39 +1,50 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef } from 'react';
 
 interface CanvasProps {
     currentTool: string;
     zoomLevel: number;
-    ref: React.RefObject<HTMLCanvasElement | null>;
 }
 
-export function CanvasTool({ ref, currentTool, zoomLevel }: CanvasProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+/**
+ * CanvasTool component is a wrapper around the <canvas> element
+ * that resizes dynamically based on the container.
+ * Uses forwardRef to allow parent (Canvas.tsx) to access the ref directly.
+ */
+export const CanvasTool = forwardRef<HTMLCanvasElement, CanvasProps>(
+    ({ currentTool, zoomLevel }, canvasRef) => {
+        const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
-    useEffect(() => {
-        const updateCanvasSize = () => {
-            if (canvasRef.current) {
-                setCanvasSize({
-                    width: canvasRef.current.offsetWidth,
-                    height: canvasRef.current.offsetHeight
-                });
-            }
-        };
+        /**
+         * This useEffect adjusts canvas size whenever the window resizes.
+         */
+        useEffect(() => {
+            const updateCanvasSize = () => {
+                const canvas = (canvasRef as React.RefObject<HTMLCanvasElement>)?.current;
+                if (canvas) {
+                    setCanvasSize({
+                        width: canvas.offsetWidth,
+                        height: canvas.offsetHeight,
+                    });
+                }
+            };
 
-        updateCanvasSize();
-        window.addEventListener('resize', updateCanvasSize);
+            updateCanvasSize();
+            window.addEventListener('resize', updateCanvasSize);
 
-        return () => {
-            window.removeEventListener('resize', updateCanvasSize);
-        };
-    }, []);
+            return () => {
+                window.removeEventListener('resize', updateCanvasSize);
+            };
+        }, [canvasRef]);
 
-    return (
-        <canvas
-            ref={canvasRef}
-            className="bg-black border"
-            width={1534}
-            height={927}
-        />
-    );
-}
+        return (
+            <canvas
+                ref={canvasRef}
+                className="bg-black border w-full h-full overflow-hidden"
+                width={canvasSize.width || 1534}
+                height={canvasSize.height || 927}
+            />
+        );
+    }
+);
+
+CanvasTool.displayName = "CanvasTool";

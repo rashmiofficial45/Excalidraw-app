@@ -25,6 +25,10 @@ interface MobileToolbarProps {
 export function MobileToolbar({ currentTool, setCurrentTool }: MobileToolbarProps) {
     const handleToolClick = (toolId: string) => {
         setCurrentTool(toolId);
+        if (currentTool === "select"){
+            // Perform action for select tool
+            
+        }
     };
 
     return (
