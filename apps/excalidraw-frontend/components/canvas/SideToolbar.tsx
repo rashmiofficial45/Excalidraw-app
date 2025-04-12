@@ -12,13 +12,11 @@ import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 
 const tools = [
-    { id: 'select', icon: Hand, label: 'Select' },
-    { id: 'rectangle', icon: Square, label: 'Rectangle' },
+    { id: 'rect', icon: Square, label: 'Rectangle' },
     { id: 'circle', icon: Circle, label: 'Circle' },
     { id: 'pencil', icon: Pencil, label: 'Pencil' },
     { id: 'text', icon: Type, label: 'Text' },
-    { id: 'image', icon: Image, label: 'Image' },
-    { id: 'eraser', icon: Eraser, label: 'Eraser' },
+    // { id: 'eraser', icon: Eraser, label: 'Eraser' },
 ];
 
 const modifiers = [
@@ -44,6 +42,7 @@ export function SideToolbar({ currentTool, setCurrentTool, isCollapsed }: SideTo
     const isMobile = useIsMobile();
 
     const handleToolClick = (toolId: string) => {
+        console.log(toolId)
         setCurrentTool(toolId);
     };
 
@@ -85,19 +84,19 @@ export function SideToolbar({ currentTool, setCurrentTool, isCollapsed }: SideTo
 
             <Separator />
 
-            <div className="flex flex-col gap-2">
+            {/* <div className="flex flex-col gap-2">
                 {modifiers.map((tool) => (
                     <ToolButton key={tool.id} tool={tool} isActive={currentTool === tool.id} />
                 ))}
-            </div>
+            </div> */}
 
-            <Separator />
+            {/* <Separator />
 
             <div className="flex flex-col gap-2">
                 {actions.map((tool) => (
                     <ToolButton key={tool.id} tool={tool} isActive={currentTool === tool.id} />
                 ))}
-            </div>
+            </div> */}
         </div>
     );
 }

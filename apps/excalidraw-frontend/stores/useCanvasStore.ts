@@ -10,12 +10,12 @@ interface CanvasStore {
   setZoomLevel: (val: number) => void;
 }
 export const useCanvasStore = create<CanvasStore>((set) => ({
-  currentTool: "select",
+  currentTool: "rect",
   setCurrentTool: (tool) => set({ currentTool: tool }),
 
   isCollapsed: false,
   setIsCollapsed: (collapsed) => set({ isCollapsed: collapsed }),
-  
+
   zoomLevel: 100,
   setZoomLevel: (zoom) => set({ zoomLevel: zoom }),
 }));

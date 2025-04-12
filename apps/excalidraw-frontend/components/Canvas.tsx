@@ -6,6 +6,7 @@ import { useIsMobile } from "../hooks/use-mobile";
 import { SideToolbar } from "./canvas/SideToolbar";
 import { MobileToolbar } from "./canvas/MobileToolbar";
 import { CanvasTool } from "./canvas/CanvasTool";
+import { useCanvasStore } from "../stores/useCanvasStore";
 
 /**
  * Main Canvas component responsible for rendering the entire UI,
@@ -15,15 +16,15 @@ import { CanvasTool } from "./canvas/CanvasTool";
 const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
     // Ref to the <canvas> element
     const canvasRef = useRef<HTMLCanvasElement>(null);
-
     // State to track current drawing tool (default is "select")
-    const [currentTool, setCurrentTool] = useState('select');
-
-    // Sidebar toggle state
-    const [isCollapsed, setIsCollapsed] = useState(false);
-
-    // Zoom level for infinite canvas
-    const [zoomLevel, setZoomLevel] = useState(100);
+    const {
+        currentTool,
+        setCurrentTool,
+        isCollapsed,
+        setIsCollapsed,
+        zoomLevel,
+        setZoomLevel,
+    } = useCanvasStore();
 
     // Check if device is mobile to render MobileToolbar
     const isMobile = useIsMobile();
