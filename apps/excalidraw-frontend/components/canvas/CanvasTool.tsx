@@ -6,13 +6,13 @@ interface CanvasProps {
 }
 
 /**
- * CanvasTool component is a wrapper around the <canvas> element
- * that resizes dynamically based on the container.
- * Uses forwardRef to allow parent (Canvas.tsx) to access the ref directly.
+ * CanvasTool is a forwardRef component that renders the <canvas> element.
+ * It listens to window resize events and adjusts the canvas dimensions to match
+ * the container (in this case, the viewport). This is essential for an infinite canvas.
  */
 export const CanvasTool = forwardRef<HTMLCanvasElement, CanvasProps>(
     ({ currentTool, zoomLevel }, canvasRef) => {
-        const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+        const [canvasSize, setCanvasSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
         /**
          * This useEffect adjusts canvas size whenever the window resizes.
@@ -22,15 +22,15 @@ export const CanvasTool = forwardRef<HTMLCanvasElement, CanvasProps>(
                 const canvas = (canvasRef as React.RefObject<HTMLCanvasElement>)?.current;
                 if (canvas) {
                     setCanvasSize({
-                        width: canvas.offsetWidth,
-                        height: canvas.offsetHeight,
+                        width: window.innerWidth, // filling the entire viewport
+                        height: window.innerHeight,
                     });
                 }
             };
 
             updateCanvasSize();
-            window.addEventListener('resize', updateCanvasSize);
 
+            window.addEventListener('resize', updateCanvasSize);
             return () => {
                 window.removeEventListener('resize', updateCanvasSize);
             };
@@ -40,8 +40,8 @@ export const CanvasTool = forwardRef<HTMLCanvasElement, CanvasProps>(
             <canvas
                 ref={canvasRef}
                 className="bg-black border w-full h-full overflow-hidden"
-                width={canvasSize.width || 1534}
-                height={canvasSize.height || 927}
+                width={canvasSize.width}
+                height={canvasSize.height}
             />
         );
     }

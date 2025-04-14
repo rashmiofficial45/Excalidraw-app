@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import DrawInit from "../draw";
 import { TopToolbar } from "./canvas/TopToolbar";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -9,14 +9,13 @@ import { CanvasTool } from "./canvas/CanvasTool";
 import { useCanvasStore } from "../stores/useCanvasStore";
 
 /**
- * Main Canvas component responsible for rendering the entire UI,
- * handling toolbars (mobile/desktop), managing state, and
- * initiating drawing logic via DrawInit.
+ * The Canvas component is responsible for rendering the infinite canvas UI along with the toolbars.
+ * It uses Zustand for global state management (currentTool, isCollapsed, zoomLevel), and initializes the drawing logic.
  */
 const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
     // Ref to the <canvas> element
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    // State to track current drawing tool (default is "select")
+    // Access global state from Zustand.
     const {
         currentTool,
         setCurrentTool,
@@ -26,18 +25,17 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
         setZoomLevel,
     } = useCanvasStore();
 
-    // Check if device is mobile to render MobileToolbar
+    // Detect mobile devices to render the appropriate toolbar.
     const isMobile = useIsMobile();
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
-
     /**
-     * useEffect to initialize the canvas drawing setup.
-     * This function sets up the WebSocket connection and canvas drawing logic
-     * when roomId and canvasRef are available.
-     */
+  * The useEffect here initializes the drawing logic once the canvas is available.
+  * It retrieves the 2D context of the canvas and calls DrawInit, which sets up drawing,
+  * pan, and zoom event listeners, as well as real-time synchronization via WebSocket.
+  */
     useEffect(() => {
         if (!roomId) return;
 
@@ -52,11 +50,11 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
         };
 
         fetchData();
-    }, [canvasRef]);
+    }, [canvasRef, roomId, socket]);
 
     return (
         <div className="flex h-screen w-full flex-col overflow-hidden">
-            {/* Top Toolbar controls like zoom/side toggle */}
+            {/* Top Toolbar with controls for zoom and toggling sidebar */}
             <TopToolbar
                 toggleSidebar={toggleSidebar}
                 isCollapsed={isCollapsed}
@@ -65,7 +63,7 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
             />
 
             <div className="flex flex-1 overflow-hidden">
-                {/* Only show side toolbar on desktop */}
+                {/* Side toolbar is visible on non-mobile devices */}
                 {!isMobile && (
                     <SideToolbar
                         currentTool={currentTool}
@@ -73,21 +71,13 @@ const Canvas = ({ roomId, socket }: { roomId: number, socket: WebSocket }) => {
                         isCollapsed={isCollapsed}
                     />
                 )}
-
-                {/* Canvas component where drawing happens */}
-                <CanvasTool
-                    ref={canvasRef}
-                    currentTool={currentTool}
-                    zoomLevel={zoomLevel}
-                />
+                {/* CanvasTool renders the actual <canvas> element */}
+                <CanvasTool ref={canvasRef} currentTool={currentTool} zoomLevel={zoomLevel} />
             </div>
 
-            {/* Mobile Toolbar for smaller screens */}
+            {/* Mobile toolbar for smaller screens */}
             {isMobile && (
-                <MobileToolbar
-                    currentTool={currentTool}
-                    setCurrentTool={setCurrentTool}
-                />
+                <MobileToolbar currentTool={currentTool} setCurrentTool={setCurrentTool} />
             )}
         </div>
     );
