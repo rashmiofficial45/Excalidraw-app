@@ -185,14 +185,6 @@ const DrawInit = async (
     }
   };
 
-  // Listen for spacebar events to enable panning with left-click.
-  window.addEventListener("keydown", (e) => {
-    if (e.code === "Space") spacePressed = true;
-  });
-  window.addEventListener("keyup", (e) => {
-    if (e.code === "Space") spacePressed = false;
-  });
-
   // --- Wheel Event for Mouse: Pan only (do not zoom via wheel) ---
   // Instead of zooming, the wheel event now simply adjusts the pan offsets.
   canvas.addEventListener(
@@ -223,64 +215,6 @@ const DrawInit = async (
     },
     { passive: false }
   );
-
-  // Helper: Compute distance between two touch points.
-  function getDistance(touches: TouchList) {
-    const [touch1, touch2] = [touches[0], touches[1]];
-    return Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) +
-        Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-  }
-
-  // On touch start: if two fingers, record initial distance; if one finger, record pan start.
-  function handleTouchStart(e: TouchEvent) {
-    if (e.touches.length === 2) {
-      lastTouchDistance = getDistance(e.touches);
-    } else if (e.touches.length === 1) {
-      lastPanX = e.touches[0].clientX;
-      lastPanY = e.touches[0].clientY;
-    }
-    e.preventDefault();
-  }
-
-  // On touch move:
-  // - One-finger moves update pan offsets.
-  // - Two-finger pinch updates the zoom (scale) and offsets so that the pinch midpoint remains fixed.
-  function handleTouchMove(e: TouchEvent) {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - lastPanX;
-      const deltaY = touch.clientY - lastPanY;
-      offsetX += deltaX;
-      offsetY += deltaY;
-      lastPanX = touch.clientX;
-      lastPanY = touch.clientY;
-      clearCanvas(ctx, existingShape, canvas);
-    } else if (e.touches.length === 2) {
-      const newDistance = getDistance(e.touches);
-      const zoomFactor = newDistance / lastTouchDistance;
-      const prevScale = scale;
-      // Update scale based on pinch gesture.
-      scale *= zoomFactor;
-      scale = Math.max(0.2, Math.min(scale, 5)); // Clamp scale.
-      // Calculate the midpoint of the two touch points.
-      const midpointX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      const midpointY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-      const rect = canvas.getBoundingClientRect();
-      const canvasMidX = midpointX - rect.left;
-      const canvasMidY = midpointY - rect.top;
-      // Convert the midpoint to world coordinates using previous scale.
-      const worldX = (canvasMidX - offsetX) / prevScale;
-      const worldY = (canvasMidY - offsetY) / prevScale;
-      // Update pan offsets so that the world coordinate of the midpoint remains fixed.
-      offsetX = canvasMidX - worldX * scale;
-      offsetY = canvasMidY - worldY * scale;
-      lastTouchDistance = newDistance;
-      clearCanvas(ctx, existingShape, canvas);
-    }
-    e.preventDefault();
-  }
 
   // Mouse up finalizes shape and sends it to backend
   const handleMouseUp = (e: MouseEvent) => {
@@ -344,9 +278,6 @@ const DrawInit = async (
       );
     }
   };
-  // Register event listeners for touch events.
-  canvas.addEventListener("touchstart", handleTouchStart, { passive: false });
-  canvas.addEventListener("touchmove", handleTouchMove, { passive: false });
 
   // Register event listeners
   canvas.addEventListener("mousedown", handleMouseDown);
