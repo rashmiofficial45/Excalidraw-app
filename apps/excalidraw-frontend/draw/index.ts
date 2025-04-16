@@ -195,14 +195,34 @@ const DrawInit = async (
 
   // --- Wheel Event for Mouse: Pan only (do not zoom via wheel) ---
   // Instead of zooming, the wheel event now simply adjusts the pan offsets.
-  canvas.addEventListener("wheel", (e) => {
-    e.preventDefault();
-    // Update pan offsets based on wheel delta.
-    // Note: e.deltaX and e.deltaY already provide the scroll deltas.
-    offsetX -= e.deltaX;
-    offsetY -= e.deltaY;
-    clearCanvas(ctx, existingShape, canvas);
-  });
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+
+      if (e.ctrlKey) {
+        // This is a pinch gesture on Mac trackpad
+        const zoomAmount = -e.deltaY * 0.005;
+        const mouse = getMousePos(canvas, e); // in world coords before zoom
+
+        const prevScale = scale;
+        scale *= 1 + zoomAmount;
+        scale = Math.max(0.1, Math.min(5, scale)); // clamp zoom
+
+        // adjust offset so zoom centers around mouse
+        offsetX -= mouse.x * scale - mouse.x * prevScale;
+        offsetY -= mouse.y * scale - mouse.y * prevScale;
+
+        clearCanvas(ctx, existingShape, canvas);
+      } else {
+        // This is a regular scroll event; implement panning
+        offsetX -= e.deltaX;
+        offsetY -= e.deltaY;
+        clearCanvas(ctx, existingShape, canvas);
+      }
+    },
+    { passive: false }
+  );
 
   // Helper: Compute distance between two touch points.
   function getDistance(touches: TouchList) {
@@ -333,10 +353,6 @@ const DrawInit = async (
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mousemove", handleMouseMove);
 };
-
-
-
-
 
 /**
  * clearCanvas resets the canvas and redraws all shapes while applying
