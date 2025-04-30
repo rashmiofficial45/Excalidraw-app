@@ -1,6 +1,17 @@
 import axios from "axios";
 import { BACKEND_URL } from "../lib/config";
 import { useCanvasStore } from "../stores/useCanvasStore";
+
+/*
+  Define custom types for our drawing application:
+  - pencilStyle: possible values for pencil line cap styles.
+  - Point: a coordinate in 2D space.
+  - Shape: a union type representing the possible shape objects that can be drawn:
+      - "rect" for rectangles
+      - "circle" for circles
+      - "pencil" for freehand pencil strokes (which store an array of points)
+      - "text" for displaying text
+*/
 type pencilStyle = "butt" | "round" | "square";
 type Point = { x: number; y: number };
 type Shape =
@@ -32,15 +43,16 @@ type Shape =
       y: number;
       fontSize: number;
     };
-/**
- * Global variables for infinite canvas transformations:
- * - scale: zoom level (1 is 100%, >1 zooms in, <1 zooms out)
- * - offsetX, offsetY: pan offsets (in screen pixels)
- * - isPanning: flag for panning mode
- * - spacePressed: indicates if the spacebar is held (to pan with left mouse)
- * - lastPanX, lastPanY: store last pointer positions for panning calculations
- * - lastTouchDistance: used for calculating pinch zoom
- */
+
+/*
+  Global variables for infinite canvas transformations:
+  - scale: the current zoom level (1 means 100% zoom)
+  - offsetX, offsetY: the panning offsets (in screen pixels)
+  - isPanning: boolean flag indicating if panning mode is active
+  - spacePressed: flag indicating if the spacebar is held down (to pan with left mouse)
+  - lastPanX, lastPanY: store the last known pointer positions (used to calculate movement deltas)
+  - lastTouchDistance: used for calculating the change in distance between two fingers (pinch zoom)
+*/
 let scale = 1;
 let offsetX = 0;
 let offsetY = 0;
@@ -49,31 +61,39 @@ let spacePressed = false;
 let lastPanX = 0;
 let lastPanY = 0;
 let lastTouchDistance = 0;
-/**
- * Initializes drawing logic and WebSocket behavior on the canvas.
- */
+
+/*
+  DrawInit initializes the drawing logic and sets up event listeners
+  for mouse and touch interactions, as well as WebSocket event handling.
+  Parameters:
+    - canvas: the HTMLCanvasElement to draw on
+    - ctx: the 2D rendering context for the canvas
+    - roomId: identifier for the drawing session/room
+    - socket: WebSocket instance for real-time communication
+*/
 const DrawInit = async (
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   roomId: number,
   socket: WebSocket
 ) => {
-  // Subscribe to global state for tool and zoom (dynamic updates).
+  // Subscribe to a Zustand store to retrieve the current drawing tool.
   let currentTool = useCanvasStore.getState().currentTool;
   useCanvasStore.subscribe((state) => {
     currentTool = state.currentTool;
   });
-  // (Note: here zoomLevelStore is separate from our local variable "scale".)
-  // For the infinite canvas, we manage pan/zoom independently.
+
+  // Optionally subscribe to a zoom level from the store, though the local scale is managed independently.
   let zoomLevel = useCanvasStore.getState().zoomLevel;
   useCanvasStore.subscribe((state) => {
     zoomLevel = state.zoomLevel;
   });
 
-  // Fetch past shapes from server (persisted state)
+  // Fetch any previously saved shapes from the backend using an API call.
   let existingShape: Shape[] = await getExistingShape(roomId);
 
-  // Handle incoming WebSocket messages
+  // Set up the WebSocket event handler to listen for new shape messages.
+  // When a message is received, push it onto the existingShape array and redraw the canvas.
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === "chat") {
@@ -82,21 +102,25 @@ const DrawInit = async (
     }
   };
 
-  // Draw all shapes (existing + incoming) initially
+  // Draw existing shapes onto the canvas initially.
   clearCanvas(ctx, existingShape, canvas);
 
-  // Local drawing state
+  // Local state variables for handling drawing events:
+  // - isDrawing: tracks whether a drawing operation is in progress.
+  // - startX, startY: record the starting position (in world coordinates) when drawing begins.
+  // - pencilPoints: collects the points for a freehand pencil drawing.
   let isDrawing = false;
   let startX = 0;
   let startY = 0;
   let pencilPoints: Point[] = [];
 
   /**
-   * getMousePos converts a MouseEvent's screen coordinates to "world" coordinates.
-   * It does so by:
-   * 1. Getting the canvas bounding rectangle (the canvas' offset in the page).
-   * 2. Converting to canvas coordinates.
-   * 3. Adjusting by the current pan offsets and zoom scale.
+   * getMousePos converts a MouseEvent's screen coordinates into "world" coordinates.
+   * Steps:
+   * 1. Retrieve the canvas's bounding rectangle to determine its position relative to the viewport.
+   * 2. Subtract the rectangle's left and top values from the event's clientX and clientY
+   *    to obtain the position relative to the canvas element.
+   * 3. Adjust for the current pan (offsetX, offsetY) and divide by the zoom scale.
    */
   function getMousePos(canvas: HTMLCanvasElement, e: MouseEvent) {
     const rect = canvas.getBoundingClientRect();
@@ -108,35 +132,47 @@ const DrawInit = async (
     };
   }
 
-  // --- Panning Event Handlers ---
-  // Listen for panning gestures using middle mouse or left mouse with space held.
+  // --- Panning and Drawing Event Handlers ---
+
+  /*
+    handleMouseDown:
+    - Captures the initial pointer position in world space using getMousePos.
+    - If the event should trigger panning (middle mouse or left-click with space), it sets isPanning to true.
+    - Otherwise, it initiates a drawing operation, starting a new pencil stroke if the current tool is "pencil."
+  */
   const handleMouseDown = (e: MouseEvent) => {
     const pos = getMousePos(canvas, e);
     startX = pos.x;
     startY = pos.y;
     isDrawing = true;
-    // If we're in panning mode, do not start a drawing stroke.
+    // If already in panning mode or spacebar is pressed, do not start drawing.
     if (isPanning || spacePressed) return;
 
+    // For pencil tool, initialize pencilPoints and begin a new path.
     if (currentTool === "pencil") {
       pencilPoints = [pos];
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
     }
+    // Check for mouse button conditions: if middle button or left-click with space pressed, enter panning mode.
     if (e.button === 1 || (e.button === 0 && spacePressed)) {
       isPanning = true;
       lastPanX = e.clientX;
       lastPanY = e.clientY;
-      // Prevent default to avoid text selection
+      // Prevent default behavior to stop text selection.
       e.preventDefault();
     }
   };
 
-  // Mouse move dynamically renders current rectangle
+  /*
+    handleMouseMove:
+    - If in panning mode, it updates the pan offsets (offsetX, offsetY) based on the mouse movement.
+    - Otherwise, if a drawing operation is active, it calculates the new pointer position (in world coordinates),
+      clears the canvas, and draws a live preview of the shape being drawn.
+    - For the pencil tool, it continuously adds points to the pencilPoints array and redraws the freehand path.
+  */
   const handleMouseMove = (e: MouseEvent) => {
-    if (!isDrawing) return;
-    // If panning, drawing is skipped.
-    // Handle panning with mouse movement.
+    // If panning mode is active, update pan offsets based on movement.
     if (isPanning) {
       const deltaX = e.clientX - lastPanX;
       const deltaY = e.clientY - lastPanY;
@@ -147,14 +183,14 @@ const DrawInit = async (
       clearCanvas(ctx, existingShape, canvas);
       return;
     }
-
     if (!isDrawing) return;
     const pos = getMousePos(canvas, e);
     const width = pos.x - startX;
     const height = pos.y - startY;
+    // Clear the canvas and redraw existing shapes plus current preview.
     clearCanvas(ctx, existingShape, canvas);
     ctx.strokeStyle = "rgba(255, 255, 255)";
-
+    // Depending on the selected tool, draw a live preview.
     if (currentTool === "rect") {
       ctx.strokeRect(startX, startY, width, height);
     } else if (currentTool === "circle") {
@@ -163,10 +199,9 @@ const DrawInit = async (
       ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
       ctx.stroke();
     } else if (currentTool === "pencil") {
+      // For pencil, push the new point, clear, then redraw the entire pencil path.
       pencilPoints.push(pos);
-      // Clear canvas and redraw existing shapes
       clearCanvas(ctx, existingShape, canvas);
-      // Begin drawing current pencil path
       ctx.beginPath();
       for (let i = 0; i < pencilPoints.length; i++) {
         const pt = pencilPoints[i];
@@ -179,56 +214,30 @@ const DrawInit = async (
       ctx.stroke();
       return;
     } else if (currentTool === "text") {
+      // Preview for text tool.
       ctx.font = `20px Arial`;
       ctx.fillStyle = "white";
       ctx.fillText("Hello World", pos.x, pos.y);
     }
   };
 
-  // --- Wheel Event for Mouse: Pan only (do not zoom via wheel) ---
-  // Instead of zooming, the wheel event now simply adjusts the pan offsets.
-  canvas.addEventListener(
-    "wheel",
-    (e) => {
-      e.preventDefault();
-
-      if (e.ctrlKey) {
-        // This is a pinch gesture on Mac trackpad
-        const zoomAmount = -e.deltaY * 0.005;
-        const mouse = getMousePos(canvas, e); // in world coords before zoom
-
-        const prevScale = scale;
-        scale *= 1 + zoomAmount;
-        scale = Math.max(0.1, Math.min(5, scale)); // clamp zoom
-
-        // adjust offset so zoom centers around mouse
-        offsetX -= mouse.x * scale - mouse.x * prevScale;
-        offsetY -= mouse.y * scale - mouse.y * prevScale;
-
-        clearCanvas(ctx, existingShape, canvas);
-      } else {
-        // This is a regular scroll event; implement panning
-        offsetX -= e.deltaX;
-        offsetY -= e.deltaY;
-        clearCanvas(ctx, existingShape, canvas);
-      }
-    },
-    { passive: false }
-  );
-
-  // Mouse up finalizes shape and sends it to backend
+  /*
+    handleMouseUp:
+    - Finalizes the current drawing operation.
+    - Retrieves the final pointer position, calculates dimensions, and creates a shape object based on the current tool.
+    - The shape is appended to the existingShape collection, the canvas is cleared/re-drawn, and the new shape is sent via WebSocket.
+  */
   const handleMouseUp = (e: MouseEvent) => {
-    if (isPanning) return; // Do not process drawing if panning.
-
+    // If panning was active, just disable it.
+    if (isPanning) {
+      isPanning = false;
+      return;
+    }
     isDrawing = false;
-    isPanning = false;
-
     const pos = getMousePos(canvas, e);
     const width = pos.x - startX;
     const height = pos.y - startY;
-
     let shape: Shape | null = null;
-
     if (currentTool === "rect") {
       shape = {
         type: "rect",
@@ -251,24 +260,22 @@ const DrawInit = async (
       shape = {
         type: "pencil",
         points: pencilPoints,
-        width: 2, // default line width — update if dynamic later
-        style: "round", // you can make this dynamic too
+        width: 2,
+        style: "round",
       };
     } else if (currentTool === "text") {
       shape = {
         type: "text",
-        text: "Hello World", // Can make this user-input later
+        text: "Hello World",
         x: pos.x,
         y: pos.y,
         fontSize: 20,
       };
     }
-
     if (shape) {
       existingShape.push(shape);
       clearCanvas(ctx, existingShape, canvas);
-
-      // Send the shape data via WebSocket for real-time synchronization.
+      // Send shape to backend through WebSocket for real-time synchronization.
       socket.send(
         JSON.stringify({
           type: "chat",
@@ -279,32 +286,58 @@ const DrawInit = async (
     }
   };
 
-  // Register event listeners
+  // --- Mouse Wheel Event for Panning ---
+  // The wheel event checks for ctrlKey for pinch zoom on Mac; otherwise, it pans.
+  canvas.addEventListener(
+    "wheel",
+    (e) => {
+      e.preventDefault();
+      if (e.ctrlKey) {
+        // Pinch zoom detected on Mac trackpad.
+        const zoomAmount = -e.deltaY * 0.005; // Adjust sensitivity as needed.
+        const mouse = getMousePos(canvas, e); // Get world coordinates of mouse.
+        const prevScale = scale;
+        scale *= 1 + zoomAmount;
+        scale = Math.max(0.1, Math.min(5, scale)); // Clamp scale.
+        // Adjust pan offsets so the zoom centers around the mouse position.
+        offsetX -= mouse.x * scale - mouse.x * prevScale;
+        offsetY -= mouse.y * scale - mouse.y * prevScale;
+        clearCanvas(ctx, existingShape, canvas);
+      } else {
+        // Regular wheel scroll: update pan offsets.
+        offsetX -= e.deltaX;
+        offsetY -= e.deltaY;
+        clearCanvas(ctx, existingShape, canvas);
+      }
+    },
+    { passive: false }
+  );
+
+
+  // Register mouse event listeners.
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mouseup", handleMouseUp);
   canvas.addEventListener("mousemove", handleMouseMove);
 };
 
-/**
- * clearCanvas resets the canvas and redraws all shapes while applying
- * the pan and zoom transforms. It resets the transform, clears the canvas,
- * reapplies the transformation and then draws the background and all shapes.
- */
+/*
+  clearCanvas resets the canvas transform and clears the canvas.
+  It then applies the current pan/zoom transform and redraws the background
+  (to simulate an infinite canvas) followed by re-rendering all stored shapes.
+*/
 function clearCanvas(
   ctx: CanvasRenderingContext2D,
   existingShape: Shape[],
   canvas: HTMLCanvasElement
 ) {
-  // Reset transform and clear the entire canvas.
+  // Reset transform to identity and clear the entire canvas.
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-
-  // Clear background
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Apply pan and zoom transforms.
   ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-  // Draw the background (simulate infinite canvas by filling more area).
+  // Draw background: a black rectangle filling the viewport.
   ctx.fillStyle = "black";
   ctx.fillRect(
     -offsetX / scale,
@@ -313,6 +346,7 @@ function clearCanvas(
     canvas.height / scale
   );
 
+  // Iterate over all stored shapes and draw each one according to its type.
   existingShape.forEach((shape) => {
     switch (shape.type) {
       case "rect":
@@ -359,13 +393,13 @@ function clearCanvas(
   });
 }
 
-/**
- * API call to get previously saved shapes from the database
- */
+/*
+  getExistingShape calls the backend API to retrieve previously stored shapes
+  for a given room and returns them as an array of Shape objects.
+*/
 async function getExistingShape(roomId: number) {
   const res = await axios(`${BACKEND_URL}/chats/${roomId}`);
   const messages = res.data.Messages;
-
   const shapes = messages.map((x: { message: string }) => {
     const messageData = JSON.parse(x.message);
     return messageData;
